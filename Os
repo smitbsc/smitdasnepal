@@ -3,13 +3,136 @@ This project focuses on developing a secure and reliable authentication module t
 The authentication module enhances OS security by combining password verification, secure hashing, and one-time password (OTP/TOTP) based MFA. This layered approach significantly reduces risks from password leaks, brute-force attacks, and unauthorized access attempts. The module also implements protection against common vulnerabilities such as buffer overflows, trapdoors, and unsafe memory operations by enforcing bounds checking, safe input handling, and compiler-level security features. 
 To ensure compatibility and flexibility, the system integrates seamlessly with Linux environments through PAM (Pluggable Authentication Modules). This allows the module to work with existing login mechanisms, SSH authentication, sudo operations, and other system services without major modifications. 
 In addition, the module includes a logging and monitoring component that records authentication events, failed login attempts, and suspicious activities. These logs help administrators detect abnormal behavior and strengthen overall system security. 
-
-
-
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+2. Module-Wise Breakdown 
+ 
 Module 1: Authentication Core 
 •	Secure password hashing 
 •	User credential validation 
 •	MFA generation and verification 
 •	Session token creation 
-
-
+ 
+Module 2: Security Protection Layer 
+•	Buffer overflow protection 
+•	Trapdoor detection 
+•	Memory-safe input validation 
+•	Compiler-level hardening 
+ 
+Module 3: Logging & Monitoring 
+•	Tamper-proof logs 
+•	Brute-force attack alerts 
+•	Suspicious activity tracking 
+•	SIEM integration 
+ 
+3. Functionalities 
+The Secure Authentication Module provides several essential functionalities designed to improve the security and reliability of the operating system’s authentication process. 
+•	User Registration and Authentication 
+The system allows secure registration of new users and verification of existing users during login. It validates usernames, securely stores credentials, and ensures only authorized users can access system resources. 
+•	Password Hashing using Argon2/Bcrypt 
+User passwords are never stored in plain text. Instead, modern cryptographic hashing algorithms like Argon2 or Bcrypt are used to convert passwords into secure, non-reversible hashes. This protects user data even if the credential storage file is compromised. 
+•	Multi-Factor Authentication (OTP, TOTP, Hardware Token) 
+To enhance security beyond passwords, the module supports multiple forms of MFA: 
+•	One-Time Passwords (OTP) 
+•	Time-based OTP (TOTP such as Google Authenticator) 
+•	Hardware security tokens (e.g., FIDO2, U2F keys) 
+This adds an extra layer of verification to prevent unauthorized access. 
+•	Failed Login Attempt Detection 
+The system tracks incorrect login attempts and applies security measures such as temporary lockouts or rate-limiting. This helps defend against brute-force attacks and credential stuffing. 
+ 
+•	Secure Session Handling 
+Once a user is authenticated, the module creates a secure session using encrypted session tokens. These sessions prevent hijacking attempts and ensure that user identity is preserved safely during system usage. 
+•	Protection Against Memory Corruption 
+The module includes protections against common low-level vulnerabilities like buffer overflows, unsafe memory operations, and trapdoor injections. Safe coding practices, bounds checking, and compiler-level security flags are used to safeguard the module. 
+•	Real-Time Logging and Monitoring 
+All authentication events—successful logins, failed attempts, MFA requests, and suspicious activities—are logged in real time. These logs assist system administrators in detecting anomalies, performing audits, and maintaining overall system security. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+4. Technology Used 
+Programming Languages: 
+•	C/C++ for low-level OS modules 
+•	Python/Go for MFA services 
+Libraries and Tools: 
+•	OpenSSL 
+•	libsodium 
+•	PAM (Linux) 
+•	Argon2/Bcrypt hashing 
+Other Tools: 
+•	GitHub for version control 
+•	GCC/Clang compilers 
+•	Docker for testing 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+5. Flow Diagram 
+(Logical Flow of Authentication) 
+ 
+ 
+1.	User inputs username/password 
+2.	System validates credentials 
+3.	MFA challenge generated 
+4.	User provides OTP/TOTP 
+5.	MFA validated 
+6.	Security checks (memory, trapdoors) 
+7.	Logging recorded 
+8.	Access granted/denied 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+6. Data Flow Diagram 
+[User] → [Credential Input] → [Auth Core] → [Security Layer] → [MFA System] → [Monitoring] → [Access Result] 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+7. Revision Tracking on GitHub 
+Repository Name: secure-authentication-module-os 
+Planned Commits: 
+•	v1.0: Project initialization 
+•	v1.1: Core authentication system 
+•	v1.2: MFA subsystem 
+•	v1.3: Security hardening 
+•	v1.4: Logging module 
+•	v1.5: Integration & testing 
+•	v1.6: Documentation 
