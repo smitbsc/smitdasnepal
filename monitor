@@ -1,0 +1,143 @@
+import time
+import json
+import hashlib
+from typing import Dict
+
+LOG_FILE = "security_log.txt"
+ALERT_FILE = "alerts_log.txt"
+SIEM_FILE = "siem_feed.log"
+
+user_counters: Dict[str, int] = {}
+last_hash = "0"
+brute_force_threshold = 5
+
+
+def current_time_str() -> str:
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+
+def write_line(filename: str, line: str) -> None:
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+
+def compute_hash(data: str) -> str:
+    h = hashlib.sha256()
+    h.update(data.encode("utf-8"))
+    return h.hexdigest()
+
+
+def log_event(event_type: str, username: str, detail: str, result_code: int) -> None:
+    global last_hash
+    base = {
+        "time": current_time_str(),
+        "type": event_type or "",
+        "user": username or "",
+        "result": result_code,
+        "detail": detail or "",
+    }
+    base_str = json.dumps(base, separators=(",", ":"))
+    data_hash = compute_hash(base_str)
+    new_hash_input = last_hash + "|" + data_hash
+    new_hash = compute_hash(new_hash_input)
+    line_obj = {
+        "prev_hash": last_hash,
+        "curr_hash": new_hash,
+        "data": base,
+    }
+    write_line(LOG_FILE, json.dumps(line_obj, separators=(",", ":")))
+    last_hash = new_hash
+
+
+def send_to_siem(event_type: str, username: str, detail: str, severity: int) -> None:
+    event = {
+        "time": current_time_str(),
+        "type": event_type or "",
+        "user": username or "",
+        "detail": detail or "",
+        "severity": severity,
+    }
+    write_line(SIEM_FILE, json.dumps(event, separators=(",", ":")))
+
+
+def record_bruteforce_attempt(username: str, success: bool) -> None:
+    global user_counters, brute_force_threshold
+    if not username:
+        return
+
+    if username not in user_counters:
+        user_counters[username] = 0
+
+    if success:
+        user_counters[username] = 0
+        log_event("AUTH_SUCCESS", username, "login ok", 0)
+        send_to_siem("AUTH_SUCCESS", username, "login ok", 1)
+    else:
+        user_counters[username] += 1
+        detail = f"failed_attempts={user_counters[username]}"
+        log_event("AUTH_FAIL", username, detail, -1)
+        send_to_siem("AUTH_FAIL", username, detail, 3)
+
+        if user_counters[username] >= brute_force_threshold:
+            alert_detail = (
+                f"possible brute force on user={username} count={user_counters[username]}"
+            )
+            write_line(ALERT_FILE, alert_detail)
+            log_event("BRUTE_FORCE_ALERT", username, alert_detail, -2)
+            send_to_siem("BRUTE_FORCE_ALERT", username, alert_detail, 5)
+
+
+def record_suspicious_activity(username: str, reason: str) -> None:
+    log_event("SUSPICIOUS", username, reason, -3)
+    send_to_siem("SUSPICIOUS", username, reason, 4)
+    write_line(ALERT_FILE, f"suspicious user={username} reason={reason}")
+
+
+def read_str(prompt: str) -> str:
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        return ""
+
+
+def main() -> None:
+    global brute_force_threshold
+    while True:
+        print("\n=== Logging & Monitoring Module (Python) ===")
+        print("1. Simulate successful login")
+        print("2. Simulate failed login")
+        print("3. Record suspicious activity")
+        print(f"4. Change brute-force threshold (current={brute_force_threshold})")
+        print("5. Exit")
+
+        choice = read_str("Enter choice: ")
+        if not choice.isdigit():
+            continue
+
+        c = int(choice)
+        if c == 1:
+            username = read_str("Username: ")
+            record_bruteforce_attempt(username, True)
+            print("Login success event recorded.")
+        elif c == 2:
+            username = read_str("Username: ")
+            record_bruteforce_attempt(username, False)
+            print("Login failure event recorded.")
+        elif c == 3:
+            username = read_str("Username (optional): ")
+            reason = read_str("Reason/details: ")
+            record_suspicious_activity(username, reason)
+            print("Suspicious activity recorded.")
+        elif c == 4:
+            new_thr = read_str("New threshold: ")
+            if new_thr.isdigit():
+                brute_force_threshold = max(1, int(new_thr))
+                print(f"Threshold updated to {brute_force_threshold}")
+        elif c == 5:
+            break
+        else:
+            print("Invalid choice.")
+
+
+if __name__ == "__main__":
+    main()
